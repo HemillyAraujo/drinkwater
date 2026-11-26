@@ -5,14 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fff5f9">
 <title>Painel dos lembretes 💧</title>
 <script src="config.js"></script>
+<script>
+  // aplica o tema salvo antes de desenhar a página (evita piscar)
+  try { var t = localStorage.getItem("tema"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+</script>
 <style>
   :root { --blue:#e75a9b; --deep:#8a2d5c; --bg:#fff5f9; --muted:#a0687f; --line:#f6d3e3; }
   * { box-sizing:border-box; accent-color:#e75a9b; }
   body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--deep); }
   main { max-width:640px; margin:0 auto; padding:24px 16px 80px; }
-  h1 { font-size:26px; margin:0 0 4px; color:#d63f86; }
+  h1 { font-size:26px; margin:0 0 4px; color:#d63f86; padding-right:52px; }
   h2 { font-size:17px; margin:0 0 12px; }
   .card { background:#fff; border:1px solid #fbd3e5; border-radius:22px; padding:18px; margin:16px 0; box-shadow:0 4px 18px rgba(200,60,130,.06); }
   label { display:block; font-size:14px; font-weight:600; margin:12px 0 6px; }
@@ -40,24 +45,39 @@
   .muted { color:var(--muted); font-size:13px; }
   #toast { position:fixed; left:50%; top:16px; transform:translateX(-50%); background:var(--deep); color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; display:none; z-index:9; max-width:90%; }
   .hidden { display:none; }
-  /* ---- tema escuro ---- */
+  /* ---- tema escuro: automático (segue o iPhone) ou escolhido no botão ---- */
   @media (prefers-color-scheme: dark) {
-    :root { --blue:#f7a8cb; --deep:#ffd9ea; --bg:#1c1218; --muted:#c99bb1; --line:#4a2c3c; color-scheme:dark; }
-    * { accent-color:#f7a8cb; }
-    h1 { color:#ffb6d5; }
-    .card { background:#2a1b24; border-color:#4a2c3c; box-shadow:0 4px 18px rgba(0,0,0,.35); }
-    input[type=text], input[type=password], input[type=number], input[type=time], select, textarea { background:#211620; }
-    .btn { color:#4a1530; }
-    .btn.ghost { background:#3d2632; color:var(--deep); }
-    .btn.danger { background:#4a2026; color:#ff9c95; }
-    .days label, .rem .thumb { background-color:#3d2632; }
-    #toast { background:#ffd9ea; color:#4a1530; }
+    html:not([data-theme=light]) { --blue:#f7a8cb; --deep:#ffd9ea; --bg:#1c1218; --muted:#c99bb1; --line:#4a2c3c; color-scheme:dark; }
+    html:not([data-theme=light]) * { accent-color:#f7a8cb; }
+    html:not([data-theme=light]) h1 { color:#ffb6d5; }
+    html:not([data-theme=light]) .card { background:#2a1b24; border-color:#4a2c3c; box-shadow:0 4px 18px rgba(0,0,0,.35); }
+    html:not([data-theme=light]) input[type=text], html:not([data-theme=light]) input[type=password], html:not([data-theme=light]) input[type=number], html:not([data-theme=light]) input[type=time], html:not([data-theme=light]) select, html:not([data-theme=light]) textarea { background:#211620; }
+    html:not([data-theme=light]) .btn { color:#4a1530; }
+    html:not([data-theme=light]) .btn.ghost { background:#3d2632; color:var(--deep); }
+    html:not([data-theme=light]) .btn.danger { background:#4a2026; color:#ff9c95; }
+    html:not([data-theme=light]) .days label, html:not([data-theme=light]) .rem .thumb { background-color:#3d2632; }
+    html:not([data-theme=light]) #toast { background:#ffd9ea; color:#4a1530; }
   }
+  html[data-theme=dark] { --blue:#f7a8cb; --deep:#ffd9ea; --bg:#1c1218; --muted:#c99bb1; --line:#4a2c3c; color-scheme:dark; }
+  html[data-theme=dark] * { accent-color:#f7a8cb; }
+  html[data-theme=dark] h1 { color:#ffb6d5; }
+  html[data-theme=dark] .card { background:#2a1b24; border-color:#4a2c3c; box-shadow:0 4px 18px rgba(0,0,0,.35); }
+  html[data-theme=dark] input[type=text], html[data-theme=dark] input[type=password], html[data-theme=dark] input[type=number], html[data-theme=dark] input[type=time], html[data-theme=dark] select, html[data-theme=dark] textarea { background:#211620; }
+  html[data-theme=dark] .btn { color:#4a1530; }
+  html[data-theme=dark] .btn.ghost { background:#3d2632; color:var(--deep); }
+  html[data-theme=dark] .btn.danger { background:#4a2026; color:#ff9c95; }
+  html[data-theme=dark] .days label, html[data-theme=dark] .rem .thumb { background-color:#3d2632; }
+  html[data-theme=dark] #toast { background:#ffd9ea; color:#4a1530; }
+  .theme-btn { position:fixed; top:calc(env(safe-area-inset-top) + 14px); right:14px; z-index:5; width:44px; height:44px; border-radius:50%;
+               border:1px solid var(--line, #fbd3e5); background:var(--card, #fff); font-size:20px; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.12); }
+  html[data-theme=dark] .theme-btn { border-color:#4a2c3c; background:#2a1b24; }
+  @media (prefers-color-scheme: dark) { html:not([data-theme=light]) .theme-btn { border-color:#4a2c3c; background:#2a1b24; } }
 
 </style>
 </head>
 <body>
 <div id="toast"></div>
+<button class="theme-btn" id="themeBtn" type="button">🌙</button>
 <main>
   <h1>Painel dos lembretes 🎀</h1>
   <p class="muted">Aqui você escolhe o que aparece pra ela e de quanto em quanto tempo.</p>
@@ -133,6 +153,27 @@
 </main>
 
 <script>
+// ---- botão de tema claro/escuro ----
+(function () {
+  const btn = document.getElementById("themeBtn");
+  const sysDark = matchMedia("(prefers-color-scheme: dark)");
+  const current = () => document.documentElement.getAttribute("data-theme") || (sysDark.matches ? "dark" : "light");
+  function paint() {
+    const dark = current() === "dark";
+    btn.textContent = dark ? "☀️" : "🌙";
+    btn.setAttribute("aria-label", dark ? "Mudar para tema claro" : "Mudar para tema escuro");
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.removeAttribute("media"); m.content = dark ? "#2a1622" : "#ffe3ef"; });
+  }
+  btn.onclick = () => {
+    const next = current() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("tema", next); } catch (e) {}
+    paint();
+  };
+  sysDark.addEventListener && sysDark.addEventListener("change", paint);
+  paint();
+})();
+
 const API = window.WORKER_URL;
 const $ = (id) => document.getElementById(id);
 let password = "";

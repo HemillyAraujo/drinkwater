@@ -12,6 +12,10 @@
 <meta name="theme-color" content="#ffe3ef" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#2a1622" media="(prefers-color-scheme: dark)">
 <script src="config.js"></script>
+<script>
+  // aplica o tema salvo antes de desenhar a página (evita piscar)
+  try { var t = localStorage.getItem("tema"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+</script>
 <style>
   :root { --blue:#e75a9b; --deep:#8a2d5c; --bg:#fff0f6; --card:#fff; --muted:#a0687f; }
   * { box-sizing:border-box; accent-color:#e75a9b; }
@@ -26,6 +30,7 @@
   .plus { border-radius:50% !important; }
   .sparkle { position:fixed; pointer-events:none; opacity:.35; font-size:22px; }
   .sub { color:var(--muted); margin:0 0 20px; }
+  h1 { padding-right:52px; }
   .card { background:var(--card); border-radius:26px; padding:18px; margin-bottom:16px;
           box-shadow:0 6px 24px rgba(200,60,130,.08); }
   .btn { display:block; width:100%; border:0; border-radius:14px; padding:15px; font-size:17px; font-weight:600;
@@ -42,26 +47,45 @@
   .cups { font-size:34px; font-weight:700; }
   .drops { font-size:22px; letter-spacing:2px; min-height:28px; word-break:break-all; }
   .plus { width:64px; height:64px; border-radius:50%; font-size:30px; padding:0; flex:none; }
+  .cup-btns { display:flex; align-items:center; gap:12px; flex:none; }
+  .minus { width:48px; height:48px; border-radius:50% !important; font-size:28px; padding:0; line-height:1; }
+  .minus:disabled { opacity:.35; }
   .hidden { display:none; }
-  /* ---- tema escuro (segue o modo escuro do iPhone) ---- */
+  /* ---- tema escuro: automático (segue o iPhone) ou escolhido no botão ---- */
   @media (prefers-color-scheme: dark) {
-    :root { --blue:#f7a8cb; --deep:#ffd9ea; --bg:#1c1218; --card:#2a1b24; --muted:#c99bb1; color-scheme:dark; }
-    * { accent-color:#f7a8cb; }
-    body { background:radial-gradient(circle at 15% 0%,#4a2238 0,transparent 45%),radial-gradient(circle at 100% 30%,#3a1c2d 0,transparent 40%),linear-gradient(180deg,#2a1622 0%,var(--bg) 45%); }
-    h1 { color:#ffb6d5; }
-    .card { border-color:#4a2c3c; box-shadow:0 6px 24px rgba(0,0,0,.35); }
-    .btn { background:linear-gradient(135deg,#ffc4dd,#f497c0); color:#4a1530; box-shadow:0 6px 18px rgba(247,168,203,.22); }
-    .btn.ghost { background:#3d2632; color:var(--deep); }
-    .sparkle { opacity:.5; }
-    .ok { color:#8fe0b0; } .err { color:#ff9c95; }
+    html:not([data-theme=light]) { --blue:#f7a8cb; --deep:#ffd9ea; --bg:#1c1218; --card:#2a1b24; --muted:#c99bb1; color-scheme:dark; }
+    html:not([data-theme=light]) * { accent-color:#f7a8cb; }
+    html:not([data-theme=light]) body { background:radial-gradient(circle at 15% 0%,#4a2238 0,transparent 45%),radial-gradient(circle at 100% 30%,#3a1c2d 0,transparent 40%),linear-gradient(180deg,#2a1622 0%,var(--bg) 45%); }
+    html:not([data-theme=light]) h1 { color:#ffb6d5; }
+    html:not([data-theme=light]) .card { border-color:#4a2c3c; box-shadow:0 6px 24px rgba(0,0,0,.35); }
+    html:not([data-theme=light]) .btn { background:linear-gradient(135deg,#ffc4dd,#f497c0); color:#4a1530; box-shadow:0 6px 18px rgba(247,168,203,.22); }
+    html:not([data-theme=light]) .btn.ghost { background:#3d2632; color:var(--deep); box-shadow:none; }
+    html:not([data-theme=light]) .sparkle { opacity:.5; }
+    html:not([data-theme=light]) .ok { color:#8fe0b0; }
+    html:not([data-theme=light]) .err { color:#ff9c95; }
   }
+  html[data-theme=dark] { --blue:#f7a8cb; --deep:#ffd9ea; --bg:#1c1218; --card:#2a1b24; --muted:#c99bb1; color-scheme:dark; }
+  html[data-theme=dark] * { accent-color:#f7a8cb; }
+  html[data-theme=dark] body { background:radial-gradient(circle at 15% 0%,#4a2238 0,transparent 45%),radial-gradient(circle at 100% 30%,#3a1c2d 0,transparent 40%),linear-gradient(180deg,#2a1622 0%,var(--bg) 45%); }
+  html[data-theme=dark] h1 { color:#ffb6d5; }
+  html[data-theme=dark] .card { border-color:#4a2c3c; box-shadow:0 6px 24px rgba(0,0,0,.35); }
+  html[data-theme=dark] .btn { background:linear-gradient(135deg,#ffc4dd,#f497c0); color:#4a1530; box-shadow:0 6px 18px rgba(247,168,203,.22); }
+  html[data-theme=dark] .btn.ghost { background:#3d2632; color:var(--deep); box-shadow:none; }
+  html[data-theme=dark] .sparkle { opacity:.5; }
+  html[data-theme=dark] .ok { color:#8fe0b0; }
+  html[data-theme=dark] .err { color:#ff9c95; }
+  .theme-btn { position:fixed; top:calc(env(safe-area-inset-top) + 14px); right:14px; z-index:5; width:44px; height:44px; border-radius:50%;
+               border:1px solid var(--line, #fbd3e5); background:var(--card, #fff); font-size:20px; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.12); }
+  html[data-theme=dark] .theme-btn { border-color:#4a2c3c; background:#2a1b24; }
+  @media (prefers-color-scheme: dark) { html:not([data-theme=light]) .theme-btn { border-color:#4a2c3c; background:#2a1b24; } }
 
   small { color:var(--muted); }
 </style>
 </head>
 <body>
+<button class="theme-btn" id="themeBtn" type="button">🌙</button>
 <main>
-  <span class="sparkle" style="top:18px;right:22px">🌸</span><span class="sparkle" style="top:120px;right:60px;font-size:14px">✨</span><span class="sparkle" style="bottom:40px;left:20px">🎀</span>
+  <span class="sparkle" style="bottom:90px;right:24px">🌸</span><span class="sparkle" style="top:120px;right:60px;font-size:14px">✨</span><span class="sparkle" style="bottom:40px;left:20px">🎀</span>
   <h1 id="hello">Oi bem! 💖</h1>
   <p class="sub" id="schedule">Seu lembrete de beber água.</p>
 
@@ -93,14 +117,37 @@
         <div><small>Copos hoje</small></div>
         <div class="cups" id="cups">0</div>
       </div>
-      <button class="btn plus" id="plus" aria-label="Bebi um copo">+</button>
+      <div class="cup-btns">
+        <button class="btn ghost minus" id="minus" aria-label="Tirar um copo">−</button>
+        <button class="btn plus" id="plus" aria-label="Bebi um copo">+</button>
+      </div>
     </div>
     <div class="drops" id="drops"></div>
-    <button class="btn ghost" id="minus" style="margin-top:10px;padding:10px;font-size:14px">Desfazer</button>
   </div>
 </main>
 
 <script>
+// ---- botão de tema claro/escuro ----
+(function () {
+  const btn = document.getElementById("themeBtn");
+  const sysDark = matchMedia("(prefers-color-scheme: dark)");
+  const current = () => document.documentElement.getAttribute("data-theme") || (sysDark.matches ? "dark" : "light");
+  function paint() {
+    const dark = current() === "dark";
+    btn.textContent = dark ? "☀️" : "🌙";
+    btn.setAttribute("aria-label", dark ? "Mudar para tema claro" : "Mudar para tema escuro");
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.removeAttribute("media"); m.content = dark ? "#2a1622" : "#ffe3ef"; });
+  }
+  btn.onclick = () => {
+    const next = current() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("tema", next); } catch (e) {}
+    paint();
+  };
+  sysDark.addEventListener && sysDark.addEventListener("change", paint);
+  paint();
+})();
+
 const API = window.WORKER_URL;
 const $ = (id) => document.getElementById(id);
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -113,6 +160,7 @@ try { const c = JSON.parse(localStorage.getItem("cups") || "{}"); cups = c.day =
 function renderCups() {
   $("cups").textContent = cups;
   $("drops").textContent = "💗".repeat(Math.min(cups, 20));
+  $("minus").disabled = cups === 0;
   try { localStorage.setItem("cups", JSON.stringify({ day: today, n: cups })); } catch (e) {}
 }
 $("plus").onclick = () => { cups++; renderCups(); };
