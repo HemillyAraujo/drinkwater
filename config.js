@@ -1,2 +1,2 @@
-// Troque pelo endereço do seu Worker (aparece quando você roda "npx wrangler deploy")
-window.WORKER_URL = "https://lembrete-agua.SEU-USUARIO.workers.dev";
+// Endereço do servidor (Cloudflare Worker)
+window.WORKER_URL = "https://lembrete-agua.lembrete-agua-meu-bem.workers.dev";
