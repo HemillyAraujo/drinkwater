@@ -327,7 +327,8 @@ $("testBtn").onclick = async () => {
   $("testBtn").disabled = true;
   try {
     const d = await api("/api/admin/test", { method: "POST" });
-    toast(d.devices ? `Teste enviado para ${d.sent} de ${d.devices} celular(es).` : "Nenhum celular conectado ainda.", 4000);
+    if (d.error) toast("Não foi possível enviar: " + d.error, 12000);
+    else toast(d.devices ? `Teste enviado para ${d.sent} de ${d.devices} celular(es).` : "Nenhum celular conectado ainda.", 4000);
   } catch (e) { toast("Erro no teste: " + e.message); }
   finally { $("testBtn").disabled = false; }
 };
