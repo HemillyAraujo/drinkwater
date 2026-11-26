@@ -48,7 +48,7 @@
 <body>
 <main>
   <span class="sparkle" style="top:18px;right:22px">🌸</span><span class="sparkle" style="top:120px;right:60px;font-size:14px">✨</span><span class="sparkle" style="bottom:40px;left:20px">🎀</span>
-  <h1 id="hello">Oi! 💧</h1>
+  <h1 id="hello">Oi bem! 💖</h1>
   <p class="sub" id="schedule">Seu lembrete de beber água.</p>
 
   <div class="card hidden" id="install">
@@ -116,7 +116,7 @@ async function load() {
   try {
     const d = await (await fetch(API + "/api/public")).json();
     vapidKey = d.vapidPublicKey;
-    $("hello").textContent = `Oi, ${d.herName}! 💖`;
+    $("hello").textContent = `Oi ${d.herName}! 💖`;
     const days = d.days.length === 7 ? "todos os dias" : d.days.slice().sort().map((i) => DAYS[i]).join(", ");
     $("schedule").textContent = d.enabled
       ? `Lembretes ${fmtInterval(d.intervalMinutes)}, das ${d.startTime} às ${d.endTime}, ${days}.`
