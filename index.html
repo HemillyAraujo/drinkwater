@@ -224,24 +224,38 @@ async function subscribe() {
 
 async function init() {
   load();
+  const card = $("enableCard"), btn = $("enableBtn"), msg = $("enableMsg");
+  card.classList.remove("hidden");
   const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  if (isIOS && !standalone) { $("install").classList.remove("hidden"); return; }
-  if (!canPush) {
-    $("enableCard").classList.remove("hidden");
-    $("enableBtn").disabled = true;
-    $("enableMsg").textContent = "Este navegador não suporta notificações. No iPhone, use iOS 16.4 ou mais novo e abra pelo ícone na Tela de Início.";
+  if (isIOS && !standalone) {
+    $("install").classList.remove("hidden");
+    btn.disabled = true;
+    msg.className = "err";
+    msg.textContent = "No iPhone, o botão só funciona depois de instalar o app (passos acima) e abrir pelo ícone na Tela de Início.";
     return;
   }
-  const reg = await navigator.serviceWorker.register("sw.js");
-  $("enableCard").classList.remove("hidden");
-  $("enableBtn").onclick = subscribe;
-  const existing = await reg.pushManager.getSubscription();
-  if (existing && Notification.permission === "granted") {
-    $("enableBtn").textContent = "Lembretes ativados ✓";
-    $("enableMsg").className = "ok";
-    $("enableMsg").innerHTML = "Tudo certo por aqui 💖 <small>(toque no botão de novo se parar de receber)</small>";
-    // reenvia a inscrição para garantir que o servidor tem a versão atual
-    fetch(API + "/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(existing) }).catch(() => {});
+  if (!canPush) {
+    btn.disabled = true;
+    msg.className = "err";
+    msg.textContent = "Este navegador não suporta notificações. No Android, use o Chrome. No iPhone, use iOS 16.4 ou mais novo e abra pelo ícone na Tela de Início.";
+    return;
+  }
+  btn.onclick = subscribe;
+  try {
+    const reg = await navigator.serviceWorker.register("sw.js");
+    const existing = await reg.pushManager.getSubscription();
+    if (existing && Notification.permission === "granted") {
+      btn.textContent = "Lembretes ativados ✓";
+      msg.className = "ok";
+      msg.innerHTML = "Tudo certo por aqui 💖 <small>(toque no botão de novo se parar de receber)</small>";
+      fetch(API + "/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(existing) }).catch(() => {});
+    } else if (Notification.permission === "denied") {
+      msg.className = "err";
+      msg.textContent = "As notificações estão bloqueadas para este site. Libere nas configurações do navegador/celular e toque no botão de novo.";
+    }
+  } catch (e) {
+    msg.className = "err";
+    msg.textContent = "Não consegui preparar as notificações: " + (e.message || e);
   }
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
