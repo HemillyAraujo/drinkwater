@@ -50,6 +50,8 @@
   .cup-btns { display:flex; align-items:center; gap:12px; flex:none; }
   .minus { width:48px; height:48px; border-radius:50% !important; font-size:28px; padding:0; line-height:1; }
   .minus:disabled { opacity:.35; }
+  .reactivate { text-align:center; font-size:13px; color:var(--muted); margin-top:4px; }
+  .reactivate a { color:inherit; }
   .hidden { display:none; }
   /* ---- tema escuro: automático (segue o iPhone) ou escolhido no botão ---- */
   @media (prefers-color-scheme: dark) {
@@ -124,6 +126,8 @@
     </div>
     <div class="drops" id="drops"></div>
   </div>
+
+  <p class="reactivate hidden" id="reactivate">Lembretes ativados 💖 · <a href="#" id="reactivateLink">reativar</a></p>
 </main>
 
 <script>
@@ -216,11 +220,25 @@ async function subscribe() {
     if (!r.ok) throw new Error("O servidor recusou a inscrição.");
     msg.className = "ok"; msg.textContent = "Prontinho! Os lembretes estão ativados 💖";
     $("enableBtn").textContent = "Lembretes ativados ✓";
+    setTimeout(showActivated, 2500);
   } catch (e) {
     msg.className = "err"; msg.textContent = e.message || "Algo deu errado.";
     $("enableBtn").disabled = false;
   }
 }
+
+function showActivated() {
+  $("enableCard").classList.add("hidden");
+  $("reactivate").classList.remove("hidden");
+}
+$("reactivateLink").onclick = (e) => {
+  e.preventDefault();
+  $("reactivate").classList.add("hidden");
+  $("enableCard").classList.remove("hidden");
+  $("enableBtn").disabled = false;
+  $("enableBtn").textContent = "Ativar lembretes 💖";
+  $("enableMsg").textContent = "";
+};
 
 async function init() {
   load();
@@ -245,9 +263,7 @@ async function init() {
     const reg = await navigator.serviceWorker.register("sw.js");
     const existing = await reg.pushManager.getSubscription();
     if (existing && Notification.permission === "granted") {
-      btn.textContent = "Lembretes ativados ✓";
-      msg.className = "ok";
-      msg.innerHTML = "Tudo certo por aqui 💖 <small>(toque no botão de novo se parar de receber)</small>";
+      showActivated();
       fetch(API + "/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(existing) }).catch(() => {});
     } else if (Notification.permission === "denied") {
       msg.className = "err";
