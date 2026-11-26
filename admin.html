@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
 <title>Painel dos lembretes 💧</title>
 <script src="config.js"></script>
 <style>
@@ -39,6 +40,20 @@
   .muted { color:var(--muted); font-size:13px; }
   #toast { position:fixed; left:50%; top:16px; transform:translateX(-50%); background:var(--deep); color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; display:none; z-index:9; max-width:90%; }
   .hidden { display:none; }
+  /* ---- tema escuro ---- */
+  @media (prefers-color-scheme: dark) {
+    :root { --blue:#f7a8cb; --deep:#ffd9ea; --bg:#1c1218; --muted:#c99bb1; --line:#4a2c3c; color-scheme:dark; }
+    * { accent-color:#f7a8cb; }
+    h1 { color:#ffb6d5; }
+    .card { background:#2a1b24; border-color:#4a2c3c; box-shadow:0 4px 18px rgba(0,0,0,.35); }
+    input[type=text], input[type=password], input[type=number], input[type=time], select, textarea { background:#211620; }
+    .btn { color:#4a1530; }
+    .btn.ghost { background:#3d2632; color:var(--deep); }
+    .btn.danger { background:#4a2026; color:#ff9c95; }
+    .days label, .rem .thumb { background-color:#3d2632; }
+    #toast { background:#ffd9ea; color:#4a1530; }
+  }
+
 </style>
 </head>
 <body>
