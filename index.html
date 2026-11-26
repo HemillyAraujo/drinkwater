@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Água 💧</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Água 💧">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#2b8fd6">
+<script src="config.js"></script>
+<style>
+  :root { --blue:#2b8fd6; --deep:#0f4c81; --bg:#eaf6ff; --card:#fff; --muted:#5b7a96; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:linear-gradient(180deg,#d9efff 0%,var(--bg) 40%); color:var(--deep); min-height:100vh;
+         padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+  main { max-width:480px; margin:0 auto; padding:24px 18px 40px; }
+  h1 { font-size:28px; margin:8px 0 4px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  .card { background:var(--card); border-radius:20px; padding:18px; margin-bottom:16px;
+          box-shadow:0 6px 24px rgba(15,76,129,.08); }
+  .btn { display:block; width:100%; border:0; border-radius:14px; padding:15px; font-size:17px; font-weight:600;
+         background:var(--blue); color:#fff; cursor:pointer; }
+  .btn:disabled { opacity:.6; }
+  .btn.ghost { background:#e3f1fc; color:var(--deep); }
+  .photo { width:100%; border-radius:14px; display:block; margin-bottom:12px; max-height:420px; object-fit:cover; }
+  .msg { font-size:20px; line-height:1.35; margin:0; }
+  .time { color:var(--muted); font-size:13px; margin-top:8px; }
+  .steps { margin:8px 0 0; padding-left:20px; line-height:1.6; }
+  .ok { color:#1b8a4b; font-weight:600; }
+  .err { color:#b3261e; }
+  .counter { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .cups { font-size:34px; font-weight:700; }
+  .drops { font-size:22px; letter-spacing:2px; min-height:28px; word-break:break-all; }
+  .plus { width:64px; height:64px; border-radius:50%; font-size:30px; padding:0; flex:none; }
+  .hidden { display:none; }
+  small { color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="hello">Oi! 💧</h1>
+  <p class="sub" id="schedule">Seu lembrete de beber água.</p>
+
+  <div class="card hidden" id="install">
+    <strong>Primeiro, instale o app 📲</strong>
+    <ol class="steps">
+      <li>Abra este site no <b>Safari</b></li>
+      <li>Toque em <b>Compartilhar</b> (o quadrado com a setinha ↑)</li>
+      <li>Escolha <b>Adicionar à Tela de Início</b></li>
+      <li>Abra o app pelo ícone novo e ative os lembretes</li>
+    </ol>
+  </div>
+
+  <div class="card hidden" id="enableCard">
+    <p style="margin-top:0">Ative as notificações para receber os lembretes, mesmo com o app fechado.</p>
+    <button class="btn" id="enableBtn">Ativar lembretes 💧</button>
+    <p id="enableMsg" style="margin-bottom:0"></p>
+  </div>
+
+  <div class="card hidden" id="latestCard">
+    <img class="photo hidden" id="latestPhoto" alt="">
+    <p class="msg" id="latestText"></p>
+    <div class="time" id="latestTime"></div>
+  </div>
+
+  <div class="card">
+    <div class="counter">
+      <div>
+        <div><small>Copos hoje</small></div>
+        <div class="cups" id="cups">0</div>
+      </div>
+      <button class="btn plus" id="plus" aria-label="Bebi um copo">+</button>
+    </div>
+    <div class="drops" id="drops"></div>
+    <button class="btn ghost" id="minus" style="margin-top:10px;padding:10px;font-size:14px">Desfazer</button>
+  </div>
+</main>
+
+<script>
+const API = window.WORKER_URL;
+const $ = (id) => document.getElementById(id);
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+
+// ---- contador de copos (fica só no celular dela) ----
+const today = new Date().toLocaleDateString("pt-BR");
+let cups = 0;
+try { const c = JSON.parse(localStorage.getItem("cups") || "{}"); cups = c.day === today ? c.n : 0; } catch (e) {}
+function renderCups() {
+  $("cups").textContent = cups;
+  $("drops").textContent = "💧".repeat(Math.min(cups, 20));
+  try { localStorage.setItem("cups", JSON.stringify({ day: today, n: cups })); } catch (e) {}
+}
+$("plus").onclick = () => { cups++; renderCups(); };
+$("minus").onclick = () => { cups = Math.max(0, cups - 1); renderCups(); };
+renderCups();
+
+// ---- dados do servidor ----
+const DAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+function fmtInterval(m) {
+  if (m % 60 === 0) return m === 60 ? "a cada 1 hora" : `a cada ${m / 60} horas`;
+  return m > 60 ? `a cada ${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}` : `a cada ${m} minutos`;
+}
+let vapidKey = null;
+async function load() {
+  try {
+    const d = await (await fetch(API + "/api/public")).json();
+    vapidKey = d.vapidPublicKey;
+    $("hello").textContent = `Oi, ${d.herName}! 💧`;
+    const days = d.days.length === 7 ? "todos os dias" : d.days.slice().sort().map((i) => DAYS[i]).join(", ");
+    $("schedule").textContent = d.enabled
+      ? `Lembretes ${fmtInterval(d.intervalMinutes)}, das ${d.startTime} às ${d.endTime}, ${days}.`
+      : "Os lembretes estão pausados no momento.";
+    if (d.latest) {
+      $("latestCard").classList.remove("hidden");
+      $("latestText").textContent = d.latest.body;
+      $("latestTime").textContent = "Último lembrete: " + new Date(d.latest.sentAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+      if (d.latest.photoUrl) { $("latestPhoto").src = d.latest.photoUrl; $("latestPhoto").classList.remove("hidden"); }
+      else $("latestPhoto").classList.add("hidden");
+    }
+  } catch (e) {
+    $("schedule").textContent = "Não consegui carregar agora. Verifique a internet.";
+  }
+}
+
+// ---- notificações ----
+function urlB64ToUint8Array(s) {
+  const pad = "=".repeat((4 - (s.length % 4)) % 4);
+  const raw = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+async function subscribe() {
+  const msg = $("enableMsg");
+  $("enableBtn").disabled = true;
+  msg.className = ""; msg.textContent = "Ativando…";
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") throw new Error("Permissão negada. Vá em Ajustes › Notificações › Água 💧 e permita.");
+    const reg = await navigator.serviceWorker.ready;
+    if (!vapidKey) await load();
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(vapidKey) });
+    const r = await fetch(API + "/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sub) });
+    if (!r.ok) throw new Error("O servidor recusou a inscrição.");
+    msg.className = "ok"; msg.textContent = "Prontinho! Os lembretes estão ativados 💙";
+    $("enableBtn").textContent = "Lembretes ativados ✓";
+  } catch (e) {
+    msg.className = "err"; msg.textContent = e.message || "Algo deu errado.";
+    $("enableBtn").disabled = false;
+  }
+}
+
+async function init() {
+  load();
+  const canPush = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  if (isIOS && !standalone) { $("install").classList.remove("hidden"); return; }
+  if (!canPush) {
+    $("enableCard").classList.remove("hidden");
+    $("enableBtn").disabled = true;
+    $("enableMsg").textContent = "Este navegador não suporta notificações. No iPhone, use iOS 16.4 ou mais novo e abra pelo ícone na Tela de Início.";
+    return;
+  }
+  const reg = await navigator.serviceWorker.register("sw.js");
+  $("enableCard").classList.remove("hidden");
+  $("enableBtn").onclick = subscribe;
+  const existing = await reg.pushManager.getSubscription();
+  if (existing && Notification.permission === "granted") {
+    $("enableBtn").textContent = "Lembretes ativados ✓";
+    $("enableMsg").className = "ok";
+    $("enableMsg").innerHTML = "Tudo certo por aqui 💙 <small>(toque no botão de novo se parar de receber)</small>";
+    // reenvia a inscrição para garantir que o servidor tem a versão atual
+    fetch(API + "/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(existing) }).catch(() => {});
+  }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+init();
+</script>
+</body>
+</html>
